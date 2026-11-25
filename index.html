@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geo-Ceja | Municipio de La Ceja del Tambo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/visor.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="topbar-logo">
+    <div class="logo-circle"><img src="logo.png" style="width:100%;height:100%;object-fit:contain;border-radius:50%;"></div>
+    <div>
+      <div class="logo-text">Geo-Ceja</div>
+      <span class="logo-sub">La Ceja del Tambo</span>
+    </div>
+  </div>
+
+  <div id="search-bar">
+    <a class="user-icon" href="admin/" title="Acceso administrativo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </a>
+    <input id="search-input-top" type="text" placeholder="Buscar en Geo-Ceja…" oninput="onSearchType(this.value)" onkeyup="if(event.key==='Enter')doSearch(this.value)"/>
+    <button class="search-icon-btn" onclick="doSearch(document.getElementById('search-input-top').value)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+    <button class="filter-btn" onclick="showToast('Filtros avanzados próximamente')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6" stroke-linecap="round" stroke-width="3"/><line x1="3" y1="12" x2="3.01" y2="12" stroke-linecap="round" stroke-width="3"/><line x1="3" y1="18" x2="3.01" y2="18" stroke-linecap="round" stroke-width="3"/></svg>
+    </button>
+  </div>
+
+  <!-- BOTÓN MATRÍCULA -->
+  <button id="btn-matricula" onclick="abrirBusquedaMatricula()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Buscar Predio
+  </button>
+
+  <div id="topbar-right">
+    <!--<button class="top-pill" onclick="showToast('Portales disponibles próximamente')">Portales</button>
+    <button class="top-icon-btn" data-tip="Tour" onclick="showToast('Tour del visor')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    </button>
+    <button class="top-icon-btn" onclick="showToast('Galería de mapas')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    </button>
+    <button class="top-icon-btn" onclick="showToast('Capas adicionales')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+    </button>  PROXIMAMENTE SE PODRÁ EN FUNCIONAMIENOT PARA LAS PERSONAS.--> 
+    <div class="top-institution">
+      <strong>Alcaldía de La Ceja del Tambo</strong>
+      Observatorio Municiapl
+    </div>
+  </div>
+</div>
+
+<!-- POP-UP DE LEYENDA EN MAPA-->
+<div id="map-legend">
+  <div id="legend-header">
+    <div id="legend-header-title">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+        <path d="M14 17h7M14 21h4" />
+      </svg>
+      Leyenda del Mapa
+    </div>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <span id="legend-toggle" onclick="toggleLegendContent()" title="Minimizar/Expandir">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2.5">
+          <polyline points="18 15 12 9 6 15" />
+        </svg>
+      </span>
+      <span id="legend-close" onclick="document.getElementById('map-legend').classList.remove('show')"
+        title="Ocultar leyenda">✕</span>
+    </div>
+  </div>
+  <div id="legend-content"></div>
+</div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- SEARCH SUGGESTIONS -->
+<div id="search-suggestions"></div>
+
+<!-- LEFT TOOLS (top) -->
+<div id="left-tools">
+  <button class="lt-btn" data-tip="Mi ubicación" onclick="goMyLocation()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+  </button>
+
+  <button class="lt-btn" data-tip="Medir distancia" onclick="startMeasure('distance')">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 12h20M5 8l-3 4 3 4M19 8l3 4-3 4"/></svg>
+  </button>
+  <button class="lt-btn" data-tip="Medir área" onclick="startMeasure('area')">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+  </button>
+  <button class="lt-btn" data-tip="Ir al inicio" onclick="map.setView([6.027,-75.418],11)">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  </button>
+  <button class="lt-btn" data-tip="Compartir" onclick="shareMap()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+  </button>
+  <button class="lt-btn" data-tip="Ayuda" onclick="abrirModalAyuda()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="3" stroke-linecap="round" />
+    </svg>
+  </button>
+</div>
+
+<!-- ZOOM -->
+<div id="left-zoom">
+  <button class="lz-btn" onclick="map.zoomIn()">+</button>
+  <button class="lz-btn" onclick="map.zoomOut()">−</button>
+</div>
+
+<!-- MINI MAP -->
+<div id="minimap-wrap" onclick="showToast('Mapa de referencia')">
+  <div id="minimap"></div>
+  <div id="minimap-expand">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+  </div>
+</div>
+
+<!-- COORDS -->
+<div id="coords">75°25'4.80" W · 6°1'37.20" N</div>
+
+<!-- MEASURE FLOAT -->
+<div id="measure-float">📏 <span id="measure-val">0 m</span> — Doble clic para terminar</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu">
+  <div class="ctx-item" onclick="ctxZoomIn()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>Acercar aquí</div>
+  <div class="ctx-item" onclick="ctxZoomOut()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>Alejar aquí</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAddMarker()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Agregar marcador</div>
+  <div class="ctx-item" onclick="ctxCopyCoords()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar coordenadas</div>
+  <div class="ctx-item" onclick="startMeasure('distance');hideCtxMenu()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 12h20M5 8l-3 4 3 4M19 8l3 4-3 4"/></svg>Medir desde aquí</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="hideCtxMenu()">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cerrar menú</div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div id="right-panel">
+  <!-- Map type selector -->
+  <div id="map-type-bar">
+    <div class="map-type-label">Tipo de Mapa</div>
+    <div class="map-type-scroll">
+      <div class="map-thumb active" id="mt-satellite" onclick="setBasemap('satellite','mt-satellite')">
+        <div class="map-thumb-img">🛰</div>
+        <div class="map-thumb-name">Ortofoto 2024</div>
+      </div>
+      <div class="map-thumb" id="mt-topo" onclick="setBasemap('topo','mt-topo')">
+        <div class="map-thumb-img">🏔</div>
+        <div class="map-thumb-name">Topográfico</div>
+      </div>
+      <div class="map-thumb" id="mt-osm" onclick="setBasemap('osm','mt-osm')">
+        <div class="map-thumb-img">🗺</div>
+        <div class="map-thumb-name">OSM</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div id="panel-tabs">
+    <div class="p-tab active" onclick="switchTab(this,'explore')">Explorar Mapa</div>
+    <!--<div class="p-tab" onclick="switchTab(this,'build')">Armar Mapa</div>-->
+  </div>
+
+  <!-- Top icons row -->
+  <div id="panel-top-icons">
+
+    <!--<button class="pti" data-tip="Leyenda" onclick="showToast('Leyenda del mapa')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 17h7M14 21h4"/></svg>
+    </button>-->
+
+    <button class="pti" data-tip="Compartir" onclick="shareMap()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+    <button class="pti" data-tip="Limpiar" onclick="clearAll()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    </button>
+    <button class="pti active" id="btn-toggle-labels" data-tip="Etiquetas: ON" onclick="toggleLabels()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+        <line x1="7" y1="7" x2="7.01" y2="7" stroke-width="3" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Layer search -->
+  <div id="layer-search-wrap">
+    <div class="layer-search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+      <input type="text" placeholder="Buscar capas" oninput="filterLayers(this.value)"/>
+    </div>
+  </div>
+
+  <!-- Layer list -->
+  <div id="layer-list">
+    <!-- Categories generated by JS -->
+  </div>
+</div>
+
+<!-- MODAL BÚSQUEDA POR MATRÍCULA -->
+<div id="matricula-overlay" onclick="cerrarModalMatricula(event)">
+  <div id="matricula-modal">
+    <div id="matricula-header">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Consulta de Predio por Matrícula
+      </h2>
+      <button id="matricula-close" onclick="cerrarModalMatricula()">✕</button>
+    </div>
+    <div id="matricula-body">
+      <label for="matricula-input">Número de Matrícula Inmobiliaria</label>
+      <div id="matricula-input-wrap">
+        <input id="matricula-input" type="text" placeholder="Ej: 123456" maxlength="30"
+          onkeyup="if(event.key==='Enter') buscarPorMatricula()" autocomplete="off" spellcheck="false"/>
+        <button id="btn-buscar-matricula" onclick="buscarPorMatricula()">Buscar</button>
+      </div>
+      <p id="matricula-hint">Aplica para predios urbanos y rurales registrados en el catastro municipal.</p>
+
+      <div id="matricula-spinner">
+        ⏳ Consultando base de datos, espera por favor..
+      </div>
+      <div id="matricula-error"></div>
+      <div id="matricula-result">
+        <!-- Encabezado del predio -->
+        <div id="matricula-result-card">
+          <div id="matricula-result-header">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span id="matricula-result-titulo">Predio encontrado</span>
+          </div>
+          <!-- Tabla de usos del suelo -->
+          <div style="overflow-x:auto;">
+            <table id="usos-table">
+              <thead>
+                <tr>
+                  <th>Tipo de suelo</th>
+                  <th>Descripción</th>
+                  <th>Área (m²)</th>
+                  <th>%</th>
+                </tr>
+              </thead>
+              <tbody id="usos-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <button id="btn-ir-predio" onclick="irAlPredioBuscado()">
+          📍 Ver figura catastral en el mapa
+        </button>
+        <button id="btn-descargar-pdf" onclick="descargarInformePDF()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Descargar Informe PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOGGLE PANEL DERECHO -->
+<div id="panel-toggle" onclick="toggleRightPanel()" title="Mostrar/Ocultar panel">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+</div>
+
+<!-- PANEL DE AYUDA -->
+<div id="ayuda-overlay" onclick="cerrarModalAyuda(event)">
+  <div id="ayuda-modal">
+    <div id="ayuda-header">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="3" stroke-linecap="round" />
+        </svg>
+        Acerca de Geo-Ceja
+      </h2>
+      <button id="ayuda-close" onclick="cerrarModalAyuda()">✕</button>
+    </div>
+    <div id="ayuda-body">
+      <div class="ayuda-section">
+        <h3>Información del Geovisor</h3>
+        <p><strong>Geo-Ceja</strong> es la plataforma oficial de información geográfica del Municipio de La Ceja del
+          Tambo. Diseñada para centralizar, visualizar y facilitar la consulta ciudadana de los datos territoriales,
+          Correspondientes al Plan Básico de Ordenamiento Territorial Vigente.</p>
+      </div>
+      <div class="ayuda-section">
+        <h3>Dependencia Responsable</h3>
+        <p><strong>Alcaldía Municipal de La Ceja del Tambo</strong><br>
+          Departamento Administrativo de Planeación<br>
+          Planeación Estratégica</p>
+      </div>
+      <div class="ayuda-section">
+        <h3>Contacto y Soporte</h3>
+        <p>Para reportar inconsistencias en los datos o solicitar soporte sobre la plataforma, contáctanos:</p>
+        <p style="margin-top:4px;">
+          ✉️ <a href="mailto:pestrategica@laceja-antioquia.gov.co">pestrategica@laceja-antioquia.gov.co</a><br>
+          ✉️ <a href="mailto:dapsig@laceja-antioquia.gov.co">dapsig@laceja-antioquia.gov.co</a><br>
+          📞 (604) 553 14 14
+        </p>
+      </div>
+      <div class="ayuda-version">
+        Versión 1.4.0 &nbsp;·&nbsp; Noviembre 2026
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/config.js"></script>
+<script src="js/visor.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Geo-Ceja · Administración</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css"></head><body>
+<section id="login" class="center"><form id="login-form" class="card">
+  <h1>Geo-Ceja</h1><p class="muted">Acceso administrativo</p>
+  <input id="email" type="email" placeholder="Correo" required autocomplete="username">
+  <input id="pass" type="password" placeholder="Contraseña" required autocomplete="current-password">
+  <div id="login-err" class="err"></div>
+  <button class="btn" type="submit">Ingresar</button>
+  <a class="link" href="../index.html">← Volver al geovisor</a>
+</form></section>
+
+<section id="app" hidden>
+ <header><b>Geo-Ceja · Administración</b>
+  <div class="grow"></div>
+  <span id="quien"></span><span id="rol" class="badge"></span>
+  <a class="btn ghost" href="../index.html">Volver al geovisor</a>
+  <button class="btn ghost" id="logout">Cerrar sesión</button></header>
+ <nav id="tabs"></nav>
+ <main>
+  <div id="v-predios" hidden>
+    <div class="bar"><select id="p-tabla"><option value="urbano">Urbano</option><option value="Rural">Rural</option></select>
+      <select id="p-col" title="Campo donde buscar"></select>
+      <input id="p-q" placeholder="Buscar por matrícula…"><button class="btn" id="p-buscar">Buscar</button><button class="btn ghost" id="p-limpiar">Limpiar</button>
+      <button class="btn ghost" id="p-csv">Exportar CSV</button></div>
+    <div class="scroll"><table id="p-tbl"></table></div>
+  </div>
+  <div id="v-cargar" hidden>
+    <div class="bar"><select id="c-tabla"><option value="urbano">Urbano</option><option value="Rural">Rural</option></select>
+      <input id="c-file" type="file" accept=".csv,.geojson,.json"><button class="btn ghost" id="c-limpiar">Limpiar selección</button></div>
+    <p class="muted">CSV con columnas: matricula, nup, primer_ape, segundo_ap, area_terr, ficha, direccion (y opcional geom en WKT). GeoJSON: las propiedades se mapean a esas columnas y la geometría a <code>geom</code>.</p>
+    <div id="c-prev"></div><button class="btn" id="c-go" hidden>Confirmar carga</button>
+  </div>
+  <div id="v-informe" hidden>
+    <div class="bar"><input id="i-mat" placeholder="Matrícula inmobiliaria"><button class="btn" id="i-buscar">Cargar predio</button><button class="btn ghost" id="i-limpiar">Limpiar</button></div>
+    <div id="i-form"></div>
+  </div>
+  <div id="v-campos" hidden>
+    <div class="panel"><h3>Crear campo nuevo</h3>
+      <div class="bar"><select id="k-tabla"><option value="urbano">Tabla: Urbano</option><option value="Rural">Tabla: Rural</option></select>
+        <input id="k-nombre" placeholder="Nombre (ej. Estrato socioeconómico)">
+        <select id="k-tipo"><option value="texto">Texto</option><option value="numero">Número</option><option value="entero">Entero</option><option value="fecha">Fecha</option><option value="booleano">Sí / No</option></select>
+        <label class="chk"><input type="checkbox" id="k-ambas"> Crear en urbano y Rural</label>
+        <button class="btn" id="k-crear">Crear campo</button><button class="btn ghost" id="k-limpiar">Limpiar</button></div>
+      <p class="muted">Se crea vacío en todos los predios. El nombre se guarda en minúsculas y con guiones bajos.</p></div>
+    <h3>Campos de la tabla seleccionada</h3>
+    <p class="muted">El interruptor controla si el campo aparece en la tabla de Predios. Solo los campos creados desde aquí se pueden renombrar o eliminar.</p>
+    <div class="scroll"><table id="k-tbl"></table></div>
+  </div>
+  <div id="v-usuarios" hidden>
+    <div class="panel"><h3>Crear usuario nuevo</h3>
+      <div class="bar"><input id="u-nombre" placeholder="Nombre"><input id="u-email" type="email" placeholder="Correo">
+        <input id="u-pass" type="text" placeholder="Contraseña inicial (mín. 8)">
+        <select id="u-rol"><option value="consulta">Consulta</option><option value="editor">Editor</option><option value="admin">Superadministrador</option></select>
+        <button class="btn" id="u-crear">Crear usuario</button><button class="btn ghost" id="u-limpiar">Limpiar</button></div>
+      <p class="muted"><b>Consulta:</b> ve predios e informes. <b>Editor:</b> además edita predios y carga datos. <b>Superadministrador:</b> además gestiona campos y usuarios.</p></div>
+    <div class="scroll"><table id="u-tbl"></table></div>
+  </div>
+ </main>
+ <div id="modal" class="center" hidden><form id="m-form" class="card"></form></div>
+</section>
+<div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../js/config.js"></script><script src="admin.js"></script>
+</body></html>
