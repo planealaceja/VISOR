@@ -727,6 +727,12 @@
     margin-top: 28px; text-align: center; font-size: 11px;
     color: #a0aec0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
   }
+  #btn-toggle-labels.active {
+    background: var(--teal);
+  }
+  #btn-toggle-labels.active svg {
+    color: white;
+  }
 </style>
 </head>
 <body>
@@ -896,14 +902,6 @@
         <div class="map-thumb-img">🗺</div>
         <div class="map-thumb-name">OSM</div>
       </div>
-      <div class="map-thumb" id="mt-dark" onclick="setBasemap('dark','mt-dark')">
-        <div class="map-thumb-img" style="background:#1a2030">🌙</div>
-        <div class="map-thumb-name">Oscuro</div>
-      </div>
-      <div class="map-thumb" id="mt-light" onclick="setBasemap('light','mt-light')">
-        <div class="map-thumb-img" style="background:#f0f0f0">☀️</div>
-        <div class="map-thumb-name">Claro</div>
-      </div>
     </div>
   </div>
 
@@ -925,6 +923,12 @@
     </button>
     <button class="pti" data-tip="Limpiar" onclick="clearAll()">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    </button>
+    <button class="pti active" id="btn-toggle-labels" data-tip="Etiquetas: ON" onclick="toggleLabels()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+        <line x1="7" y1="7" x2="7.01" y2="7" stroke-width="3" stroke-linecap="round" />
+      </svg>
     </button>
   </div>
 
@@ -1042,7 +1046,7 @@
         </p>
       </div>
       <div class="ayuda-version">
-        Versión 1.1.0 &nbsp;·&nbsp; Julio 2024
+        Versión 1.4.0 &nbsp;·&nbsp; Noviembre 2026
       </div>
     </div>
   </div>
@@ -1611,45 +1615,132 @@ const GEOSERVER_WMS_VERSION = '1.1.1';
 // Nombre visible en el panel → nombre EXACTO de la capa en GeoServer (SIN el workspace)
 const GEOSERVER_LAYERS = {
   'Usos del suelo - Urbano': 'Usos_urbanos',   // = uso_residencial en tu layers.js
+  'Usos del suelo - Rural':  'Usos_rurales',      // ← nueva
   'Perímetro urbano':     'Suelo Urbano',   // = suelo_urbano en tu layers.js
   'Expansión urbana':     'Suelo_Expansion',// = suelo_expansion en tu layers.js
+  'Perimetro rural':      'Suelo_Rural',      // ← nueva
+  'Division Veredal':     'División Veredal',      // ← nueva
+  'Sectores Urbanos':     'Sectores Urbanos',      // ← nueva
 };
 
 // Capas WMS activas en el mapa (cache) — no tocar
 const activeWmsLayers = {};
 
   // ── DATOS PARA LA LEYENDA ──
-  const LEGEND_DATA = {
-    'Usos del suelo - Urbano': {
-      titulo: 'Urbano',
-      items: [
-        { label: 'Corredores de Comercio y Servicios (CCS)', color: '#d32f2f' },
-        { label: 'Residencial 1', color: '#fff59d' },
-        { label: 'Residencial 2', color: '#ffd54f' },
-        { label: 'Residencial 3', color: '#ffb300' },
-        { label: 'Uso Social Obligado (Equipamientos)', color: '#5e35b1' },
-        { label: 'Uso Social Obligado (Espacio Público)', color: '#43a047' },
-        { label: 'Zona de Comercio y Servicios Tipo 1 (ZCS-1)', color: '#1976d2' },
-        { label: 'Zonas Preservación', color: '#1b5e20' },
-        { label: 'Zonas Restauración', color: '#66bb6a' },
-        { label: 'Zonas Uso Sostenible', color: '#aed581' }
-      ]
-    },
-    'Perímetro urbano': {
-      titulo: 'Clasificación del Suelo',
-      items: [
-        { label: 'Suelo Urbano', color: '#ff9800' }
-      ]
-    },
-    'Expansión urbana': {
-      titulo: 'Clasificación del Suelo',
-      items: [
-        { label: 'Suelo de Expansión', color: '#f44336' }
-      ]
-    }
-  };
+    const LEGEND_DATA = {
+      'Usos del suelo - Urbano': {
+        titulo: 'Urbano',
+        items: [
+          { label: 'Corredores de Comercio y Servicios (CCS)', color: '#d32f2f' },
+          { label: 'Residencial 1', color: '#fff59d' },
+          { label: 'Residencial 2', color: '#ffd54f' },
+          { label: 'Residencial 3', color: '#ffb300' },
+          { label: 'Uso Social Obligado (Equipamientos)', color: '#5e35b1' },
+          { label: 'Uso Social Obligado (Espacio Público)', color: '#43a047' },
+          { label: 'Zona de Comercio y Servicios Tipo 1 (ZCS-1)', color: '#1976d2' },
+          { label: 'Zonas Preservación', color: '#1b5e20' },
+          { label: 'Zonas Restauración', color: '#66bb6a' },
+          { label: 'Zonas Uso Sostenible', color: '#aed581' }
+        ]
+      },
+      'Usos del suelo - Rural': {
+        titulo: 'Rural',
+        items: [
+          // Actividad Múltiple (ZAM)
+          { label: 'ZAM Tipo I – El Yegüerizo', color: '#f6b02e' },
+          { label: 'ZAM Tipo I – La Ceja - Abejorral', color: '#e8c828' },
+          { label: 'ZAM Tipo I – La Ceja - La Unión', color: '#d9c436' },
+          { label: 'ZAM Tipo I – Paquita - Toledo', color: '#d4a76a' },
+          { label: 'ZAM Tipo II – Paquita - Toledo', color: '#f57c00' },
+          // Equipamientos, Industria y Servicios
+          { label: 'Zona de Equipamientos (ZE)', color: '#666666' },
+          { label: 'Zona de Industria Menor (ZIM) La Guyana', color: '#99947c' },
+          { label: 'Zona de Protección Cultural (ZPC)', color: '#c2185b' },
+          { label: 'Zona de Servicios Públicos (ZPS)', color: '#4a5be0' },
+          { label: 'Zona de Servicios Públicos (ZPS) La Ceja', color: '#4a5be0' },
+          // Preservación (ZPre)
+          { label: 'ZPre – DRMI Cerros de San Nicolás', color: '#339933' },
+          { label: 'ZPre – DRMI El Capiro', color: '#339933' },
+          { label: 'ZPre – Humedal La María', color: '#00f57a' },
+          { label: 'ZPre – Humedal La Milagrosa', color: '#00f57a' },
+          { label: 'ZPre – Rondas Hídricas', color: '#1a5cd6' },
+          // Restauración (ZR)
+          { label: 'ZR – ACP Pomca Restauración Ecológica', color: '#6aa0c8' },
+          { label: 'ZR – Áreas Prioritarias Restauración', color: '#44cc1a' },
+          { label: 'ZR – DRMI Cerros de San Nicolás', color: '#a033e0' },
+          { label: 'ZR – DRMI El Capiro', color: '#d63384' },
+          { label: 'ZR – Rondas Hídricas', color: '#3b6982' },
+          // Uso Sostenible (ZUS) y Uso Público (ZGUP)
+          { label: 'ZUS – DRMI Cerros de San Nicolás', color: '#8ce02c' },
+          { label: 'ZUS – DRMI El Capiro', color: '#8ce02c' },
+          { label: 'ZUS – Rondas Hídricas', color: '#c5d9e8' },
+          { label: 'ZGUP – DRMI El Capiro', color: '#d4df80' },
+          // Explotación RRNN y Residencial Rural
+          { label: 'Zona para la Explotación RRNN (ZERN)', color: '#999999' },
+          { label: 'Parcelación Tradicional (ZRCT)', color: '#ff00d4' },
+          { label: 'Parcelación Productiva (ZRCP)', color: '#e619d6' },
+          { label: 'Zona Residencial Rural (ZRR)', color: '#1f3a60' },
+          // Protección (ZPro)
+          { label: 'ZPro – ACP Pomca Áreas Complementarias', color: '#4de04d' },
+          { label: 'ZPro – ACP Pomca Amenazas Naturales', color: '#e0401a' },
+          { label: 'ZPro – ACP Pomca Importancia Ambiental', color: '#1a9973' },
+          { label: 'ZPro – ACP Pomca Rehabilitación Conservación', color: '#8fa629' },
+          { label: 'ZPro – Alta Movimiento en Masa', color: '#a61919' },
+          { label: 'ZPro – Pendientes Sup. 75%', color: '#e01a1a' },
+          { label: 'ZPro – Predios Protección Hídrica', color: '#a6cce3' },
+          { label: 'ZPro – Red Conectividad: Enlaces', color: '#b35c33' },
+          { label: 'ZPro – Red Conectividad: Fragmentos', color: '#6b381f' },
+          { label: 'ZPro – Red Conectividad: Nodos', color: '#d98047' },
+          { label: 'ZPro – Rondas Hídricas', color: '#1a75d6' },
+          // Producción (ZPAF / ZPS)
+          { label: 'Producción Agroforestal (ZPAF) Pendientes', color: '#5ce085' },
+          { label: 'Producción Sostenible (ZPS)', color: '#99cc29' }
+        ]
+      },
+      'Perímetro urbano': {
+        titulo: 'Clasificación del Suelo',
+        items: [
+          { label: 'Suelo Urbano', color: '#ff9800' }
+        ]
+      },
+      'Perimetro rural': {
+        titulo: 'Clasificación del Suelo',
+        items: [
+          { label: 'Suelo Rural', color: '#7cb342' }
+        ]
+      },
+      'Expansión urbana': {
+        titulo: 'Clasificación del Suelo',
+        items: [
+          { label: 'Suelo de Expansión', color: '#f44336' }
+        ]
+      },
+      'Sectores Urbanos': {
+        titulo: 'División Urbana',
+        items: [
+          { label: 'Centro', color: '#e04b33' },
+          { label: 'Cuatro Esquinas', color: '#ee7647' },
+          { label: 'El Tambo', color: '#f8a055' },
+          { label: 'Fátima', color: '#fcc377' },
+          { label: 'Fray Eugenio Ramírez Salazar', color: '#fee09a' },
+          { label: 'Hipódromo', color: '#fef8b7' },
+          { label: 'La Floresta', color: '#dff0b2' },
+          { label: 'María Auxiliadora', color: '#c4e2a8' },
+          { label: 'Ofir', color: '#a2d39c' },
+          { label: 'Payuco', color: '#7db8a4' },
+          { label: 'San Cayetano', color: '#579bb0' },
+          { label: 'Tahamí', color: '#2d7eb3' }
+        ]
+      },
+      'Division Veredal': {
+        titulo: 'División Política',
+        items: [
+          { label: 'Division Veredal', color: '#5c2d0c', borderOnly: true }
+        ]
+      }
+    };
 
-  // Actualiza el contenido de la leyenda basándose en las capas WMS activas
+    // Actualiza el contenido de la leyenda basándose en las capas WMS activas
     function updateLegend() {
       const content = document.getElementById('legend-content');
       const legendWrap = document.getElementById('map-legend');
@@ -1664,7 +1755,10 @@ const activeWmsLayers = {};
           html += `<div class="leg-section">`;
           html += `<div class="leg-title">${data.titulo} (${layerName})</div>`;
           data.items.forEach(item => {
-            html += `<div class="leg-item"><div class="leg-color" style="background:${item.color}"></div><span>${item.label}</span></div>`;
+            const swatchStyle = item.borderOnly
+              ? `background:transparent; border:2.5px solid ${item.color};`
+              : `background:${item.color};`;
+            html += `<div class="leg-item"><div class="leg-color" style="${swatchStyle}"></div><span>${item.label}</span></div>`;
           });
           html += `</div>`;
         }
@@ -1693,48 +1787,155 @@ const activeWmsLayers = {};
         document.getElementById('legend-content').classList.toggle('minimized');
         document.getElementById('legend-toggle').classList.toggle('minimized');
       }
+ 
+     let labelsEnabled = true;
 
-// Añade o quita una capa WMS de GeoServer en el mapa
-  function toggleWmsLayer(displayName, on) {
-    const layerName = GEOSERVER_LAYERS[displayName];
-    if (!layerName) return false;
+      // Capa WMS de imagen única (evita etiquetas duplicadas y permite prender/apagar etiquetas)
+      const SingleTileWMS = L.Layer.extend({
+        initialize(url, options) {
+          this._url = url;
+          this._options = options;
+          this._overlay = null;
+          this._pending = null;
+        },
+        onAdd(map) {
+          this._map = map;
+          this._update();
+          map.on('moveend', this._update, this);
+        },
+        onRemove(map) {
+          map.off('moveend', this._update, this);
+          if (this._overlay) { map.removeLayer(this._overlay); this._overlay = null; }
+          if (this._pending) { map.removeLayer(this._pending); this._pending = null; }
+          this._map = null;
+        },
+        bringToFront() {
+          if (this._overlay) this._overlay.bringToFront();
+          return this;
+        },
+        setEnv(envStr) {
+          this._options.env = envStr;
+          if (this._map) this._update();
+        },
+        _update() {
+          if (!this._map) return;
+          const size = this._map.getSize();
+          if (size.x === 0 || size.y === 0) return;
 
-    if (!on) {
-      if (activeWmsLayers[displayName]) {
-        map.removeLayer(activeWmsLayers[displayName]);
+          const bounds = this._map.getBounds();
+          const sw = L.CRS.EPSG3857.project(bounds.getSouthWest());
+          const ne = L.CRS.EPSG3857.project(bounds.getNorthEast());
+
+          const params = new URLSearchParams({
+            service: 'WMS',
+            version: this._options.version || '1.1.1',
+            request: 'GetMap',
+            layers: this._options.layers,
+            styles: '',
+            format: this._options.format || 'image/png',
+            transparent: 'true',
+            srs: 'EPSG:3857',
+            bbox: `${sw.x},${sw.y},${ne.x},${ne.y}`,
+            width: size.x,
+            height: size.y,
+            env: this._options.env || 'etiquetas:1'
+          });
+
+          if (this._pending) {
+            this._map.removeLayer(this._pending);
+            this._pending = null;
+          }
+
+          const next = L.imageOverlay(`${this._url}?${params.toString()}`, bounds, { interactive: false });
+          this._pending = next;
+          next.once('load', () => {
+            if (!this._map || this._pending !== next) return;
+            if (this._overlay) this._map.removeLayer(this._overlay);
+            this._overlay = next;
+            this._pending = null;
+          });
+          next.addTo(this._map);
+        }
+      });
+
+      // Añade o quita una capa WMS de GeoServer en el mapa
+      function toggleWmsLayer(displayName, on) {
+        const layerName = GEOSERVER_LAYERS[displayName];
+        if (!layerName) return false;
+
+        if (!on) {
+          if (activeWmsLayers[displayName]) {
+            map.removeLayer(activeWmsLayers[displayName]);
+          }
+          updateLegend();
+          return true;
+        }
+
+        const envVal = labelsEnabled ? 'etiquetas:1' : 'etiquetas:0';
+
+        if (activeWmsLayers[displayName]) {
+          if (typeof activeWmsLayers[displayName].setEnv === 'function') {
+            activeWmsLayers[displayName]._options.env = envVal;
+          }
+          activeWmsLayers[displayName].addTo(map);
+          activeWmsLayers[displayName].bringToFront();
+          updateLegend();
+          return true;
+        }
+
+        const SINGLE_TILE_LAYERS = ['Division Veredal', 'Sectores Urbanos', 'Sectores'];
+        const useSingleTile = SINGLE_TILE_LAYERS.includes(displayName);
+
+        const wmsLayer = useSingleTile
+          ? new SingleTileWMS(GEOSERVER_WMS_URL, {
+            layers: `${GEOSERVER_WORKSPACE}:${layerName}`,
+            format: 'image/png',
+            version: GEOSERVER_WMS_VERSION,
+            env: envVal
+          })
+          : L.tileLayer.wms(GEOSERVER_WMS_URL, {
+            layers: `${GEOSERVER_WORKSPACE}:${layerName}`,
+            format: 'image/png',
+            transparent: true,
+            version: GEOSERVER_WMS_VERSION,
+            attribution: '© Municipio de La Ceja del Tambo',
+            maxZoom: 22,
+            maxNativeZoom: 19
+          });
+
+        if (!useSingleTile) {
+          wmsLayer.on('tileerror', () => {
+            showToast('❌ Error cargando "' + displayName + '" desde GeoServer');
+          });
+        }
+
+        wmsLayer.addTo(map);
+        activeWmsLayers[displayName] = wmsLayer;
+        showToast('✅ "' + displayName + '" cargada');
+        updateLegend();
+        return true;
       }
-      updateLegend(); // <-- AÑADIDO AQUÍ
-      return true;
-    }
 
-    if (activeWmsLayers[displayName]) {
-      activeWmsLayers[displayName].addTo(map);
-      activeWmsLayers[displayName].bringToFront();
-      updateLegend(); // <-- AÑADIDO AQUÍ
-      return true;
-    }
+      // Prende o apaga las etiquetas en las capas compatibles
+      function toggleLabels() {
+        labelsEnabled = !labelsEnabled;
+        const envVal = labelsEnabled ? 'etiquetas:1' : 'etiquetas:0';
 
-    const wmsLayer = L.tileLayer.wms(GEOSERVER_WMS_URL, {
-      layers: `${GEOSERVER_WORKSPACE}:${layerName}`,
-      format: 'image/png',
-      transparent: true,
-      version: GEOSERVER_WMS_VERSION,
-      attribution: '© Municipio de La Ceja del Tambo',
-      maxZoom: 22,
-      maxNativeZoom: 19
-    });
+        const btn = document.getElementById('btn-toggle-labels');
+        if (btn) {
+          btn.classList.toggle('active', labelsEnabled);
+          btn.setAttribute('data-tip', labelsEnabled ? 'Etiquetas: ON' : 'Etiquetas: OFF');
+        }
 
-    wmsLayer.on('tileerror', () => {
-      showToast('❌ Error cargando "' + displayName + '" desde GeoServer');
-    });
+        for (const name in activeWmsLayers) {
+          const layer = activeWmsLayers[name];
+          if (layer && map.hasLayer(layer) && typeof layer.setEnv === 'function') {
+            layer.setEnv(envVal);
+          }
+        }
 
-    wmsLayer.addTo(map);
-    activeWmsLayers[displayName] = wmsLayer;
-    showToast('✅ "' + displayName + '" cargada');
-    updateLegend(); // <-- AÑADIDO AQUÍ
-    return true;
-  }
-
+        showToast(labelsEnabled ? '🏷️ Etiquetas activadas' : '🏷️ Etiquetas ocultas');
+      }
 // Consulta atributos (GetFeatureInfo) de las capas GeoServer activas al hacer clic
 function queryActiveWmsLayers(latlng, containerPoint) {
   const activeNames = Object.keys(activeWmsLayers).filter(n => map.hasLayer(activeWmsLayers[n]));
@@ -1785,20 +1986,26 @@ function queryActiveWmsLayers(latlng, containerPoint) {
   // ── SÍMBOLOS TEMÁTICOS PARA LAS CAPAS ──
     const SYMBOLS = {
       area: '<svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1.5"><polygon points="3,11 10,3 21,6 18,18 8,21"/></svg>',
+      rural: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l5-6 4 4 4-5 5 7H3z" fill="currentColor" fill-opacity="0.25"/><path d="M2 21h20"/><circle cx="17.5" cy="6.5" r="2"/></svg>`,
       line: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 20L20 4"/></svg>',
       border: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>',
       home: '<svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/></svg>',
       point: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="5"/></svg>'
+      
     };
 
   // ── LAYER CATEGORIES ──
   const CATEGORIES = [
     // === 1. CATEGORÍAS ACTIVAS (Aparecerán de primeras) ===
     {
-      name: 'Ordenamiento Territorial', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`, badge: 2, layers: [
+      name: 'Ordenamiento Territorial', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`, badge: 7, layers: [
         { name: 'Usos del suelo - Urbano', color: '#fdd835', typé: 'area' },
+        { name: 'Usos del suelo - Rural', color: '#2e7d32', type: 'rural' },
         { name: 'Perímetro urbano', color: '#e91e63', type: 'border'},
+        { name: 'Perimetro rural', color: '#7cb342' },
         { name: 'Expansión urbana', color: '#f06292', type: 'home' },
+        { name: 'Division Veredal', color: '#5c2d0c'},
+        { name: 'Sectores Urbanos', color: '#e04b33', type: 'area' },
         //{ name: 'Predios catastrales', color: '#8e24aa' }, // Búsqueda conectada a Supabase
       ]
     },
